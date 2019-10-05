@@ -1,0 +1,215 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>MyMovieLibrary</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" href="css/style.css" type="text/css" media="all" />
+
+    <script type="text/javascript" src="js/jquery-1.4.2.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.4.1.js" integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="crossorigin="anonymous"></script>
+    <script type="text/javascript" src="js/jquery-func.js"></script>
+  </head>
+
+  <body>
+  <!-- START PAGE SOURCE -->
+  <div id="shell">
+    <div id="header">      
+      <div id="sub-navigation">        
+        <div id="search"> <!-- the top search bar start -->
+          
+            <label for="search-field">SEARCH MOVIES/SHOW</label>
+            <input type="text" name="search field" placeholder="Enter movie/show title here" id="search-field" class="blink search-field"/>&nbsp;&nbsp;&nbsp;
+
+            <label for="year-field">YEAR OF RELEASE</label>
+            <input type="text" name="search field" placeholder="Enter movie release year here" id="year-field" class="blink search-field"/>&nbsp;&nbsp;&nbsp;
+
+            <input type="button" value="GO!" class="search-button"/> <!-- Button to search -->
+          
+        </div> <!-- the top search bar end -->
+      </div>
+    </div>
+    <div id="main">
+      <div id="content">
+        <div class="box"> <!-- Search result box -->
+          <center><h1>Your Search Results Appear Here</h1></center>
+        </div>
+        <div class="box1"> 
+          <center><h1>List of Reccomended Movies</h1>
+          <table class="recomtable" id="recomtable" width="80%;"> <!-- Table of recommended movies start -->
+            <thead>
+              <th>Movie Title</th>
+              <th>Released On</th>
+              <th>Action</th>  
+            </thead>
+            <tbody></tbody>            
+          </table> <!-- Table of recommended movies ends -->
+          </center>
+        </div>
+        <div class="box2"> <!-- The IMDB top 10 movie list div starts -->
+          <div class="titlediv"> 
+            <center><h1>Top 10 IMDB rating movies</h1></center> 
+          </div>
+          <div class="topmovies"> <!-- Loads from javascript -->
+          </div>
+        </div> <!-- The IMDB top 10 movie list div ends -->
+          
+        
+  
+  <script type="text/javascript">
+
+    var search; 
+    var year; //global variables for search title and year     
+
+    function apicall() { //function to load the search results
+
+      $.getJSON("http://www.omdbapi.com/?t="+ encodeURI(search) +"&y="+  encodeURI(year) +"&apikey=5ac357d8").then(function(response){
+
+        if (response.Response == 'False') { //if there is no movie
+          $(".box").html('<h1>Oops! Movie/Show Not Found</h1><br><h2>Please check the spelling/release year</h2>'); //if there is no movie
+        }
+
+        else { 
+          var movieposter = response.Poster; //to store movie poster url
+          var movietitle = response.Title; //to store movie title
+          var movieplot = response.Plot; //to store short movie plot
+          var movierelease = response.Released;
+
+          if(movieposter == 'N/A') { //if there is no poster for the search film
+            var movielist = 
+          '<form method = "get"><input type="hidden" name="movietitle" value="' + movietitle + '"><input type="hidden" name="releasedate" value="'+ movierelease +'">'+
+          '<div class="row">'+
+              '<div class="col-md-3">'+
+                '<div class="movie-image">'+
+                  '<img src="css/images/no-poster.jpg" alt="" />'+ 
+                '</div>'+
+              '</div>'+
+              '<div class="col-md-9">'+
+                '<h1>' + movietitle + '</h1><br>'+
+                '<h3>Short Plot</h3><br>'+
+                '<p>' + movieplot + '</p><br>'+
+                '<span class="releaseinfo">'+ movierelease +'</span><input type="button" class="addmovbutton" value="Add movie to reccomendation">'+
+              '</div>'+
+            '</div></form>';
+          }
+          else {
+            var movielist = 
+            '<form method = "get"><input type="hidden" name="movietitle" value="' + movietitle + '"><input type="hidden" name="releasedate" value="'+ movierelease +'">'+ 
+            '<div class="row">'+
+                '<div class="col-md-3">'+
+                  '<div class="movie-image">'+
+                    '<img src=' + movieposter + ' alt="failed to load poster" />'+ 
+                  '</div>'+
+                '</div>'+
+                '<div class="col-md-9">'+
+                  '<h1>' + movietitle + '</h1><br>'+
+                  '<h3>Short Plot</h3><br>'+
+                  '<p>' + movieplot + '</p><br>'+
+                  '<span class="releaseinfo">'+ movierelease +'</span><input type="button" class="addmovbutton" value="Add movie to reccomendation">'+
+                '</div>'+
+              '</div></form>';
+          }
+          $(".box").html(movielist);
+        // console.log(response.Title);        
+        // console.log(response.Released);
+        addmoviefunc();
+        }
+      })
+
+    }
+
+    function delmoviefunc() {
+        $(".recomtable .delform .delbtn").click(function(){
+          if(!confirm("Are You Sure You Want To Delete the Movie?")){
+            event.preventDefault();
+          }
+      })
+    }
+
+    function refreshtable() {
+      $.ajax({    //create an ajax request to display
+              type: "GET",
+              url: "getMovies.php",             
+              dataType: "html",   //expect html to be returned                
+              success: function(response){                    
+                  $("#recomtable tbody").html(response);
+                  delmoviefunc(); 
+                  // alert(response);
+            }
+      });
+      
+    }
+
+    function addmoviefunc() {
+        $(".addmovbutton").on('click',function (){
+          // console.log('hi');      
+          $.ajax({
+              url: 'addmovie.php',
+              type: 'GET',
+              data: {
+                  movietitle: $("input[name = 'movietitle']").val(),
+                  releasedate: $("input[name = 'releasedate']").val(),
+              }
+          }).done(function(data){
+                  // console.log(data);
+                  alert(data);
+                  refreshtable();
+          });
+        })
+    }
+
+   
+
+    $(document).ready(function(){
+
+      refreshtable();
+
+      var topmovies = ["The Shawshank Redemption","The Godfather","The Dark Knight","The Lord of the Rings","Pulp Fiction","12 Angry Men","Inception","Fight club","Forrest Gump","Harakiri"];
+      var tmovielist;
+
+      for (var i = 0; i < 10; i++) { //for loop for array of 10 movies
+            $.getJSON("http://www.omdbapi.com/?t="+ encodeURI(topmovies[i]) +"&apikey=5ac357d8").then(function(response){
+                // console.log(response);
+                tmovielist =
+                '<div class="row">'+
+                '<div class="col-md-3">'+
+                  '<div class="movie-image">'+
+                    '<img src=' + response.Poster + ' alt="failed to load poster" />'+ 
+                  '</div>'+
+                '</div>'+
+                '<div class="col-md-9">'+
+                  '<h1>' + response.Title + '</h1><br>'+
+                  '<h3>Short Plot</h3><br>'+
+                  '<p>' + response.Plot + '</p><br>'+
+                  '<span class="releaseinfo">'+ response.Released +'</span>'+
+                '</div>'+
+              '</div>'; //to add html to the div
+                // console.log(response);
+                $(".topmovies").append(tmovielist); // to apend the 10 top IMDB movies
+                });
+            // console.log(tmovielist);
+            // console.log("infor");
+        }
+
+      $(".search-button").click(function(){
+        
+        search = $('#search-field').val();
+        // console.log(search);
+        year = $('#year-field').val();
+        apicall();
+        search="";
+        year="";
+
+      })
+
+      
+
+    });
+
+
+  </script>
+
+  <!-- END PAGE SOURCE -->
+  </body>
+</html>
